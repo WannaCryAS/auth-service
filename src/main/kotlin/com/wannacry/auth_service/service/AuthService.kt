@@ -164,7 +164,7 @@ class AuthService(
             )
         }
 
-        if (request.newPassword == user.userPassword) {
+        if (passwordEncoder.matches(request.newPassword, user.userPassword)) {
             return AuthResponse(
                 responseCode = PASSWORD_SAME.first,
                 description = PASSWORD_SAME.second
