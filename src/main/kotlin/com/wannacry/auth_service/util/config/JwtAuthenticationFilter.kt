@@ -22,27 +22,42 @@ class JwtAuthenticationFilter(
         filterChain: FilterChain
     ) {
         val authHeader = request.getHeader("Authorization")
+        println("Authorization header: $authHeader")
 
         if (authHeader.isNullOrBlank() || !authHeader.startsWith("Bearer ")) {
+            println("Invalid or missing token. Skipping...")
             filterChain.doFilter(request, response)
             return
         }
 
         val token = authHeader.substring(7)
-        val username = jwtService.extractUserName(token)
+        println("Extracted token: $token")
+        try {
+            val username = jwtService.extractUserName(token)
+            println("Extracted username: $username")
 
-        if (username.isNotEmpty() && SecurityContextHolder.getContext().authentication == null) {
-            val userDetails = userDetailsService.loadUserByUsername(username)
+            if (username.isNotEmpty() && SecurityContextHolder.getContext().authentication == null) {
+                val userDetails = userDetailsService.loadUserByUsername(username)
+                println("Loaded user: $userDetails")
+                println("Authorities: ${userDetails.authorities}")
 
-            if (jwtService.validationToken(token)) {
-                val authToken = UsernamePasswordAuthenticationToken(
-                    userDetails,
-                    null,
-                    userDetails.authorities
-                )
-                authToken.details = WebAuthenticationDetailsSource().buildDetails(request)
-                SecurityContextHolder.getContext().authentication = authToken
+                if (jwtService.validationToken(token)) {
+                    println("Token validated successfully")
+                    val authToken = UsernamePasswordAuthenticationToken(
+                        userDetails,
+                        null,
+                        userDetails.authorities
+                    )
+                    authToken.details = WebAuthenticationDetailsSource().buildDetails(request)
+                    SecurityContextHolder.getContext().authentication = authToken
+                    println("Authentication set in context.")
+                } else {
+                    println("Token validation failed.")
+                }
             }
+        } catch (e: Exception) {
+            println("Exception in filter: ${e.message}")
+            e.printStackTrace()
         }
         filterChain.doFilter(request, response)
     }

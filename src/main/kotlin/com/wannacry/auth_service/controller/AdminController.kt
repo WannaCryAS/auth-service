@@ -8,7 +8,11 @@ import org.springframework.http.ResponseEntity
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
+import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.RestController
 
+@RestController
+@RequestMapping("/auth")
 class AdminController(
     private val adminRegistrationProcessor: AdminRegistrationProcessor
 ) {
@@ -16,6 +20,7 @@ class AdminController(
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/admin/register")
     fun registerUserByAdmin(@RequestBody request: AuthRequest<List<RegisterRequest>>): ResponseEntity<AuthResponse> {
+        println("AUTHORIZED user reached this endpoint!")
         return ResponseEntity.ok(adminRegistrationProcessor.process(requestList = request.data))
     }
 }

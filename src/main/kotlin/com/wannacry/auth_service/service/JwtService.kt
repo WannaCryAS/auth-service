@@ -31,12 +31,17 @@ class JwtService(
 
     fun validationToken(token: String): Boolean {
         return try {
-            Jwts.parser()
+            println("Token validated successfully.")
+            val jwt = Jwts.parser()
                 .verifyWith(secretKey)
                 .build()
                 .parseSignedClaims(token)
-            true
+
+            // Optionally check expiration
+            val expiration = jwt.payload.expiration
+            expiration.after(Date())
         } catch (e: Exception) {
+            println("Token validation failed: ${e.message}")
             false
         }
     }
@@ -48,5 +53,15 @@ class JwtService(
             .parseSignedClaims(token)
             .payload
             .subject
+    }
+
+    fun extractRole(token: String): String {
+        val claims = Jwts.parser()
+            .verifyWith(secretKey)
+            .build()
+            .parseSignedClaims(token)
+            .payload
+
+        return claims["role"] as String
     }
 }

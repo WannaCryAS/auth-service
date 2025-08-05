@@ -13,24 +13,34 @@ class AdminRegistrationProcessor(
     private val authService: AuthService
 ) {
     fun process(requestList: List<RegisterRequest>): AuthResponse {
-        val createUser = mutableListOf<User>()
+        val existingUsernames = getExistingUserName(requestList)
+        if (existingUsernames.isNotEmpty()) {
+            return existingUserResponse(existingUsernames)
+        }
 
-        requestList.forEach { request ->
-            val user = authService.findUserByUsername(request.userName)
-            if (authService.isUsernameTaken(request.userName))
-                return AuthResponse(
-                    responseCode = REGISTER_BY_ADMIN_ALREADY_EXIST.first,
-                    description = REGISTER_BY_ADMIN_ALREADY_EXIST.second,
-                    responseData = user?.userName
-                )
+        val newUser = userList(requestList)
+        authService.saveMultipleUser(newUser)
 
+        return successResponse()
+    }
+
+    private fun getExistingUserName(requestList: List<RegisterRequest>): List<String> {
+        return requestList
+            .filter {
+                authService.isUsernameTaken(it.userName)
+            }
+            .map { it.userName }
+    }
+
+    private fun userList(requestList: List<RegisterRequest>): List<User> {
+        return requestList.map { request ->
             val password = if (request.password.isNullOrBlank() && request.role == "TEACHER") {
                 null
             } else {
                 authService.encodePassword(request.password.orEmpty())
             }
 
-            val eachUser = User(
+            User(
                 fullName = request.fullName,
                 userName = request.userName,
                 email = request.email,
@@ -38,12 +48,18 @@ class AdminRegistrationProcessor(
                 phoneNumber = request.phoneNumber,
                 role = request.role
             )
-
-            createUser.add(eachUser)
         }
+    }
 
-        authService.saveMultipleUser(createUser)
+    private fun existingUserResponse(usernames: List<String>): AuthResponse {
+        return AuthResponse(
+            responseCode = REGISTER_BY_ADMIN_ALREADY_EXIST.first,
+            description = REGISTER_BY_ADMIN_ALREADY_EXIST.second,
+            responseData = usernames
+        )
+    }
 
+    private fun successResponse(): AuthResponse {
         return AuthResponse(
             responseCode = SUCCESS.first,
             description = SUCCESS.second

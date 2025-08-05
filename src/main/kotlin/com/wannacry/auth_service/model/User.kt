@@ -38,7 +38,7 @@ data class User(
     @Column(name = "first_time_login")
     var firstTimeLogin: Boolean = true,
 ): UserDetails {
-    override fun getAuthorities(): Collection<GrantedAuthority?>? {
+    override fun getAuthorities(): Collection<GrantedAuthority> {
         return listOf(SimpleGrantedAuthority("ROLE_$role"))
     }
 
@@ -46,12 +46,15 @@ data class User(
         return userPassword
     }
 
-    override fun getUsername(): String? {
+    override fun getUsername(): String {
         return userName
     }
 
-//    fun getEmail(): String? {
-//        return email
-//    }
+    override fun isAccountNonExpired(): Boolean = true
 
+    override fun isAccountNonLocked(): Boolean = true
+
+    override fun isCredentialsNonExpired(): Boolean = true
+
+    override fun isEnabled(): Boolean = true
 }
